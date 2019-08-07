@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# PROVIDE: tika
+# REQUIRE: DAEMON
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name="tika"
+rcvar="tika_enable"
+pidfile="/var/run/${name}.pid"
+
+tika_enable=${tika_enable:-"NO"}
+tika_listen_host=${tika_listen_host:-"localhost"}
+tika_listen_port=${tika_list_port:-"9998"}
+tika_runtime_user=${tika_runtime_user:-"nobody"}
+
+load_rc_config "${name}"
+
+command="/usr/sbin/daemon"
+command_args="-c -r -f -P ${pidfile} -u ${tika_runtime_user} /usr/local/bin/java -Xmx1g -jar /var/opt/tika/tika-server.jar -h ${tika_listen_host} -p ${tika_listen_port}"
+
+run_rc_command "$1"

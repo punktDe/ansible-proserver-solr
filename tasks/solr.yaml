@@ -1,0 +1,70 @@
+---
+- name: Create program directory for Solr
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ solr.prefix.bin }}"
+
+- name: Download Solr
+  get_url:
+    url: "http://archive.apache.org/dist/lucene/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz"
+    dest: "{{ item }}"
+    checksum: "{{ solr.checksum }}"
+  with_items:
+    - "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
+  register: solr_get_url_result
+
+- block:
+  - name: Stop Solr service
+    service:
+      name: solr
+      state: stopped
+
+  - name: Disable Solr service
+    lineinfile:
+      path: "{{ item }}"
+      regexp: "^solr_enable="
+      line: 'solr_enable="NO"'
+    with_items:
+      - /etc/rc.conf
+
+  - name: Remove old Solr version
+    command: >
+      find {{ item|quote }} -mindepth 1 -not -name solr-{{ solr.version|quote }}.tar.gz -delete
+    with_items:
+      - "{{ solr.prefix.bin }}"
+
+  - name: Unarchive Solr
+    unarchive:
+      src: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
+      dest: "{{ item }}"
+      extra_opts:
+        - --strip-components=1
+      remote_src: yes
+    with_items:
+      - "{{ solr.prefix.bin }}"
+
+  when: solr_get_url_result.changed
+
+- name: Sync Solr config
+  synchronize:
+    src: "{{ solr.synced_config }}/"
+    dest: "{{ item }}"
+    rsync_opts:
+      - --chown=solr:solr
+      - --no-times
+      - --checksum
+  with_items:
+    - "{{ solr.prefix.var }}"
+  when: solr.synced_config
+  notify: Restart Solr
+
+- name: Enable Solr service
+  lineinfile:
+    path: "{{ item }}"
+    regexp: "^solr_enable="
+    line: 'solr_enable="YES"'
+  with_items:
+    - /etc/rc.conf
+  notify: Start Solr

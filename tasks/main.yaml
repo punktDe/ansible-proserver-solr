@@ -1,0 +1,4 @@
+---
+- import_tasks: solr.yaml
+- import_tasks: tika.yaml
+- import_tasks: nginx.yaml
