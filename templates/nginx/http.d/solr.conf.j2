@@ -17,9 +17,9 @@ server {
 
     include {{ nginx.prefix.config }}/include/security_headers.conf;
 
-    {% if oauth2_proxy.config.solr -%}
+    {% if solr.oauth2_proxy -%}
     location /proserver/iap {
-        proxy_pass http://[::1]:{{ oauth2_proxy.config.solr.http_address.split(":")[-1] }};
+        proxy_pass http://[::1]:{{ oauth2_proxy.config[solr.oauth2_proxy].http_address.split(":")[-1] }};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Scheme $scheme;
@@ -27,7 +27,7 @@ server {
     }
 
     location = /proserver/iap/auth {
-        proxy_pass http://[::1]:{{ oauth2_proxy.config.solr.http_address.split(":")[-1] }};
+        proxy_pass http://[::1]:{{ oauth2_proxy.config[solr.oauth2_proxy].http_address.split(":")[-1] }};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Scheme $scheme;
@@ -37,7 +37,7 @@ server {
     {% endif %}
 
     location / {
-        {% if oauth2_proxy.config.solr -%}
+        {% if solr.oauth2_proxy -%}
         auth_request /proserver/iap/auth;
         error_page 401 = /proserver/iap/sign_in;
         auth_request_set $auth_cookie $upstream_http_set_cookie;
