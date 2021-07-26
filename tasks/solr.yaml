@@ -55,6 +55,7 @@
       - --chown=solr:solr
       - --no-times
       - --checksum
+    use_ssh_args: yes
   with_items:
     - "{{ solr.prefix.var }}"
   when: solr.synced_config
