@@ -1,13 +1,16 @@
 ---
 - name: Template nginx configuration
-  template:
+  ansible.builtin.template:
     src: "{{ item }}"
     dest: "{{ render_path }}"
+    owner: "root"
+    group: "{{ root_group }}"
+    mode: "0644"
   loop_control:
     label: "{{ render_path }}"
   vars:
     template_dir: "{{ role_path }}/templates"
-    render_path: "{{ nginx.prefix.config }}/{{ item|strip_prefix(template_dir + '/nginx/')|strip_suffix('.j2') }}"
+    render_path: "{{ nginx.prefix.config }}/http.d/{{ item | basename | regex_replace('\\.j2$', '') }}"
   with_fileglob:
     - "{{ role_path }}/templates/nginx/http.d/*.j2"
   notify: Restart nginx

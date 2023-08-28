@@ -1,0 +1,52 @@
+{% set http_listeners = ['*:80'] %}
+{% set https_listeners = ['*:443'] %}
+{% if ansible_local.proserver is defined and ansible_local.proserver.routing.with_gate64 -%}
+{% set _ = http_listeners.append('[::]:87') %}
+{% set _ = https_listeners.append('[::]:57') %}
+{% endif %}
+
+{% for i in http_listeners %}
+<VirtualHost {{ i }}>
+  {% if "57" in i %}
+  RemoteIPProxyProtocol On
+  {% endif %}
+  ServerName {{ solr.domain }}
+  RewriteEngine On
+  RewriteCond %{REQUEST_URI} !^/\.well\-known/acme\-challenge/
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}$1 [R=301,L]
+</VirtualHost>
+{% endfor %}
+
+{% if dehydrated | cert_exists(solr.domain) %}
+{% for i in https_listeners %}
+<VirtualHost {{ i }}>
+    {% if "87" in i %}
+    RemoteIPProxyProtocol On
+    {% endif %}
+    ServerName {{ solr.domain }}
+    DocumentRoot /var/null
+
+    SSLEngine on
+    SSLProxyEngine on
+    {% if solr.oauth2_proxy is defined and solr.oauth2_proxy -%}
+    ProxyPass /proserver/iap/auth/ http://127.0.0.1:{{ oauth2_proxy.config[typo3.oauth2_proxy].http_address.split(":")[-1] }}/proserver/iap/auth/
+    ProxyPassReverse /proserver/iap/auth/ http://127.0.0.1:{{ oauth2_proxy.config[typo3.oauth2_proxy].http_address.split(":")[-1] }}/proserver/iap/auth/
+
+    ErrorDocument 401 /proserver/iap/sign_in
+
+    RequestHeader set Auth-Cookie %{upstream_set_cookie}e env=upstream_set_cookie
+    Header always set Cookie "%{env:upstream_set_cookie}e" env=upstream_set_cookie
+    {% endif -%}
+
+    ProxyPass / http://127.0.0.1:8983/
+    ProxyPassReverse / http://127.0.0.1:8983/
+    ProxyPreserveHost On
+    ProxyPassInterpolateEnv On
+
+    SSLCertificateFile {{ dehydrated | cert_fullchain(solr.domain) }}
+    SSLCertificateChainFile {{ dehydrated | cert_fullchain(solr.domain) }}
+    SSLCertificateKeyFile {{ dehydrated | cert_privkey(solr.domain) }}
+
+</VirtualHost>
+{% endfor %}
+{% endif %}
