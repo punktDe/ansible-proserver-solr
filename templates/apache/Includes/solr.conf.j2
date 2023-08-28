@@ -29,8 +29,8 @@
     SSLEngine on
     SSLProxyEngine on
     {% if solr.oauth2_proxy is defined and solr.oauth2_proxy -%}
-    ProxyPass /proserver/iap/auth/ http://127.0.0.1:{{ oauth2_proxy.config[typo3.oauth2_proxy].http_address.split(":")[-1] }}/proserver/iap/auth/
-    ProxyPassReverse /proserver/iap/auth/ http://127.0.0.1:{{ oauth2_proxy.config[typo3.oauth2_proxy].http_address.split(":")[-1] }}/proserver/iap/auth/
+    ProxyPass /proserver/iap/auth/ http://127.0.0.1:{{ oauth2_proxy.config[solr.oauth2_proxy].http_address.split(":")[-1] }}/proserver/iap/auth/
+    ProxyPassReverse /proserver/iap/auth/ http://127.0.0.1:{{ oauth2_proxy.config[solr.oauth2_proxy].http_address.split(":")[-1] }}/proserver/iap/auth/
 
     ErrorDocument 401 /proserver/iap/sign_in
 
