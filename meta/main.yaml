@@ -2,7 +2,7 @@
 dependencies:
   - role: dehydrated
   - role: nginx
-    when: inventory_hostname in groups.nginx
+    when: inventory_hostname in groups.nginx or not inventory_hostname in groups.apache
   - role: apache
     when: inventory_hostname in groups.apache
   - role: oauth2_proxy
