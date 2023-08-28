@@ -7,8 +7,8 @@
 
 - name: Install Nginx template
   ansible.builtin.include_tasks: nginx.yaml
-  when: (inventory_hostname in groups.nginx) | default(True)
+  when: inventory_hostname in groups.nginx or not inventory_hostname in groups.apache
 
 - name: Install Apache template
   ansible.builtin.include_tasks: apache.yaml
-  when: (inventory_hostname in groups.apache) | default(False)
+  when: inventory_hostname in groups.apache
