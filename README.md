@@ -1,14 +1,24 @@
 # ansible-proserver-solr
 
-Downloads a defined version of apache solr and tika from archive.apache.org and enables the services. 
+An Ansible role that sets up Apache Solr and Apache Tika on a Proserver
 
-Define the solr and tika version that fits to your project using the paths
+Downloads the defined versions of Solr and Tika from [archive.apache.org](https://archive.apache.org) and enables their respective services.
+
+### Example configuration
+
+The default configuration values can be found in defaults/main.yaml
 
 ```yaml
 solr:
+  domain: https://solr.example.com
+  prefix:
+    bin: /var/solr
+    var: /var/db/solr
   version: 9.2.0
   tika:
+    prefix:
+      bin: /var/opt/tika
     version: 2.8.0
+  synced_config: /path/to/synced/config
+  oauth2_proxy: main # https://github.com/punktDe/ansible-proserver-oauth2-proxy
 ```
-
-on your host_vars or group_vars file.
