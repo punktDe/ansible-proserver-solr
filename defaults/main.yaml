@@ -1,14 +1,13 @@
 ---
 solr:
+  domain:
   prefix:
     bin: /var/solr
     var: /var/db/solr
-  version: 7.4.0
-  checksum: sha256:a50eac8dece0acb5e6f0d868c7868ce8174e299752356f3424a15aa39bd64407
+  version: 9.2.0
   tika:
     prefix:
       bin: /var/opt/tika
-    version: "1.20"
-    checksum: sha256:d80ad0f5f3b8d1b58a9ff9c43c6ad7c1c736ef0d9c63ee7e8d83e948aff2d274
+    version: 2.8.0
   synced_config:
   oauth2_proxy:

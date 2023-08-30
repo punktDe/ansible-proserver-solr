@@ -1,33 +1,37 @@
 ---
 - name: Create program directory for Tika
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
+    owner: root
+    group: "{{ root_group }}"
+    mode: "0755"
   with_items:
     - "{{ solr.tika.prefix.bin }}"
 
 - name: Download Tika
-  get_url:
-    url: "https://archive.apache.org/dist/tika/tika-server-{{ solr.tika.version }}.jar"
-    dest: "{{ item }}"
-    checksum: "{{ solr.tika.checksum }}"
-  with_items:
-    - "{{ solr.tika.prefix.bin }}/tika-server-{{ solr.tika.version }}.jar"
+  ansible.builtin.get_url:
+    url: "https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-standard-{{ solr.tika.version }}.jar"
+    dest: "{{ solr.tika.prefix.bin }}/tika-server-{{ solr.tika.version }}.jar"
+    checksum: "sha512:https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-standard-{{ solr.tika.version }}.jar.sha512"
+    owner: root
+    group: "{{ root_group }}"
+    mode: "0755"
   notify: Restart Tika
 
 - name: Install Tika service
-  template:
+  ansible.builtin.template:
     src: rc.d/tika
     dest: "{{ item }}"
     owner: root
     group: wheel
-    mode: 0755
+    mode: "0755"
   with_items:
     - /etc/rc.d/tika
   notify: Start Tika
 
 - name: Enable Tika service
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "{{ item }}"
     regexp: "^tika_enable="
     line: 'tika_enable="YES"'

@@ -1,0 +1,15 @@
+---
+- name: Template Apache configuration
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "{{ render_path }}"
+    owner: "root"
+    group: "{{ root_group }}"
+    mode: "0644"
+  loop_control:
+    label: "{{ render_path }}"
+  vars:
+    render_path: "{{ apache.prefix.config }}/Includes/{{ item | basename | regex_replace('\\.j2$', '') }}"
+  with_fileglob:
+    - "{{ role_path }}/templates/apache/Includes/*.j2"
+  notify: Restart apache

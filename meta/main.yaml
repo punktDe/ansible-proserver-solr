@@ -1,4 +1,9 @@
 ---
 dependencies:
+  - role: dehydrated
   - role: nginx
+    when: inventory_hostname in groups.nginx or not inventory_hostname in groups.apache
+  - role: apache
+    when: inventory_hostname in groups.apache
   - role: oauth2_proxy
+    when: solr.oauth2_proxy is defined and solr.oauth2_proxy

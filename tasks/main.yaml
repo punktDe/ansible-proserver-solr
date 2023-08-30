@@ -1,4 +1,14 @@
 ---
-- import_tasks: solr.yaml
-- import_tasks: tika.yaml
-- import_tasks: nginx.yaml
+- name: Install Apache Solr
+  ansible.builtin.include_tasks: solr.yaml
+
+- name: Install Apache Tika
+  ansible.builtin.include_tasks: tika.yaml
+
+- name: Install Nginx template
+  ansible.builtin.include_tasks: nginx.yaml
+  when: inventory_hostname in groups.nginx or not inventory_hostname in groups.apache
+
+- name: Install Apache template
+  ansible.builtin.include_tasks: apache.yaml
+  when: inventory_hostname in groups.apache

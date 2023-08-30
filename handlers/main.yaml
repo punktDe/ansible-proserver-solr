@@ -1,24 +1,24 @@
 ---
 - name: Start Solr
-  service:
+  ansible.builtin.service:
     name: solr
     state: started
   register: solr_service_result
 
 - name: Restart Solr
-  service:
+  ansible.builtin.service:
     name: solr
     state: restarted
   when: not (solr_service_result is defined and solr_service_result.changed)
 
 - name: Start Tika
-  service:
+  ansible.builtin.service:
     name: tika
     state: started
   register: tika_service_result
 
 - name: Restart Tika
-  service:
+  ansible.builtin.service:
     name: tika
     state: restarted
   when: not (tika_service_result is defined and tika_service_result.changed)
