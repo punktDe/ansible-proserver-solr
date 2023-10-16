@@ -1,25 +1,47 @@
 ---
-- name: Create program directory for Solr
+- name: Create program directory for Solr 
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    owner: root
-    group: "{{ root_group }}"
+    owner: solr
+    group: solr
     mode: "0755"
   with_items:
     - "{{ solr.prefix.bin }}"
 
-- name: Download Solr
+- name: Download Solr {{ solr.version }}
   ansible.builtin.get_url:
-    url: "https://archive.apache.org/dist/solr/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz"
-    dest: "{{ item }}"
-    checksum: "sha512:https://archive.apache.org/dist/solr/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz.sha512"
-    owner: root
-    group: "{{ root_group }}"
+    url: "https://archive.apache.org/dist/{{ solr_path_segment }}/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz"
+    dest: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
+    checksum: "{{ checksum_version }}:https://archive.apache.org/dist/{{ solr_path_segment }}/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz.{{ checksum_version }}"
+    owner: solr
+    group: solr
     mode: "0644"
-  with_items:
-    - "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
+  vars:
+    solr_path_segment: "{{ 'solr' if solr.version[0] is ansible.builtin.version('9', '>=') else 'lucene' }}"
+    checksum_version: "{{ 'sha512' if solr.version[0] is ansible.builtin.version('9', '>=') else 'sha1' }}"
   register: solr_get_url_result
+
+- name: Ignore unrecognized JVM options (for versions older than 9)
+  notify: Restart Solr
+  when: solr.version[0] is ansible.builtin.version('9', '<')
+  ansible.builtin.template:
+    dest: "/etc/rc.d/solr"
+    src: "rc.d/solr"
+    owner: root
+    mode: "0755"
+
+- name: Don't ignore unrecognized JVM options (for versions newer than 9)
+  notify: Restart Solr
+  when: solr.version[0] is ansible.builtin.version('9', '>=')
+  ansible.builtin.file:
+    path: "/etc/rc.d/solr"
+    state: absent
+
+- name: Check if {{ solr.prefix.bin }}/bin exists
+  register: solr_bin_exists
+  ansible.builtin.stat:
+    path: "{{ solr.prefix.bin }}/bin"
 
 - name: Handle Solr update
   when: solr_get_url_result.changed
@@ -29,13 +51,10 @@
         name: solr
         state: stopped
 
-    - name: Disable Solr service
-      ansible.builtin.lineinfile:
-        path: "{{ item }}"
-        regexp: "^solr_enable="
-        line: 'solr_enable="NO"'
-      with_items:
-        - /etc/rc.conf
+    - name: Kill all solr processes
+      changed_when: yes
+      ansible.builtin.command:
+        cmd: "killall -u solr"
 
     - name: Remove old Solr version
       changed_when: yes
@@ -45,15 +64,20 @@
       with_items:
         - "{{ solr.prefix.bin }}"
 
-    - name: Unarchive Solr
-      ansible.builtin.unarchive:
-        src: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
-        dest: "{{ item }}"
-        extra_opts:
-          - --strip-components=1
-        remote_src: yes
-      with_items:
-        - "{{ solr.prefix.bin }}"
+- name: Unarchive Solr
+  when: solr_get_url_result.changed or not solr_bin_exists.stat.exists
+  notify: Restart Solr
+  ignore_errors: "{{ ansible_check_mode }}"
+  ansible.builtin.unarchive:
+    src: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
+    owner: solr
+    group: solr
+    dest: "{{ item }}"
+    extra_opts:
+      - --strip-components=1
+    remote_src: yes
+  with_items:
+    - "{{ solr.prefix.bin }}"
 
 
 - name: Sync Solr config

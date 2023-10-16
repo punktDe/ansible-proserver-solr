@@ -1,0 +1,39 @@
+#!/bin/sh
+# PROVIDE: solr
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name=solr
+rcvar=solr_enable
+load_rc_config $name
+
+: ${solr_enable:=NO}
+: ${solr_instance:=/var/db/solr}
+
+solr_start ()
+{
+        su -m solr -c "${command} start -a '-XX:+IgnoreUnrecognizedVMOptions'"
+}
+
+solr_stop ()
+{
+        su -m solr -c "${command} stop"
+}
+
+solr_status ()
+{
+        su -m solr -c "${command} status"
+}
+
+# add /usr/local/bin to path
+export PATH=$PATH:/usr/local/bin
+
+required_files="${solr_instance}/solr.xml /usr/local/etc/solr.in.sh /usr/local/solr"
+command=/usr/local/solr/bin/solr
+start_cmd=solr_start
+stop_cmd=solr_stop
+status_cmd=solr_status
+
+run_rc_command "$1"
