@@ -9,14 +9,17 @@
   with_items:
     - "{{ solr.tika.prefix.bin }}"
 
-- name: Download Tika
+- name: Download Tika {{ solr.tika.version }}
+  register: tika_get_url_result
   ansible.builtin.get_url:
-    url: "https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-standard-{{ solr.tika.version }}.jar"
-    dest: "{{ solr.tika.prefix.bin }}/tika-server-{{ solr.tika.version }}.jar"
-    checksum: "sha512:https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-standard-{{ solr.tika.version }}.jar.sha512"
+    url: "https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-{{ tika_standard }}{{ solr.tika.version }}.jar"
+    dest: "{{ solr.tika.prefix.bin }}/tika-server.jar"
+    checksum: "sha512:https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-{{ tika_standard }}{{ solr.tika.version }}.jar.sha512"
     owner: root
     group: "{{ root_group }}"
     mode: "0755"
+  vars:
+    tika_standard: "{{ 'standard-' if solr.tika.version is version('2', '>=') else '' }}"
   notify: Restart Tika
 
 - name: Install Tika service
