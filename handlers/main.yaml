@@ -16,6 +16,7 @@
   ansible.builtin.shell:
     cmd: |
       set -e -u -o pipefail
+      supervisorctl update tika
       supervisorctl start tika
   register: tika_service_result
 

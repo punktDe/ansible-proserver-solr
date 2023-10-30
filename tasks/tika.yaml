@@ -9,6 +9,13 @@
   with_items:
     - "{{ solr.tika.prefix.bin }}"
 
+- name: Create log directory for Tika
+  ansible.builtin.file:
+    path: "/var/log/tika"
+    state: directory
+    owner: nobody
+    mode: "0755"
+
 - name: Download Tika {{ solr.tika.version }}
   register: tika_get_url_result
   ansible.builtin.get_url:

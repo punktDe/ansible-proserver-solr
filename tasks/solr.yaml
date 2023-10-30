@@ -53,6 +53,7 @@
 
     - name: Kill all solr processes
       changed_when: yes
+      failed_when: no
       ansible.builtin.command:
         cmd: "killall -u solr"
 
