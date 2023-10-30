@@ -7,3 +7,4 @@ dependencies:
     when: inventory_hostname in groups.apache
   - role: oauth2_proxy
     when: solr.oauth2_proxy is defined and solr.oauth2_proxy
+  - role: supervisord

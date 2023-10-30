@@ -20,24 +20,17 @@
     mode: "0755"
   vars:
     tika_standard: "{{ 'standard-' if solr.tika.version is version('2', '>=') else '' }}"
-  notify: Restart Tika
+  notify: 
+    - Start Tika
+    - Restart Tika
 
 - name: Install Tika service
   ansible.builtin.template:
-    src: rc.d/tika
-    dest: "{{ item }}"
+    src: supervisord.d/tika.conf
+    dest: "/usr/local/etc/supervisord.d/tika.conf"
     owner: root
     group: wheel
     mode: "0755"
-  with_items:
-    - /etc/rc.d/tika
-  notify: Start Tika
-
-- name: Enable Tika service
-  ansible.builtin.lineinfile:
-    path: "{{ item }}"
-    regexp: "^tika_enable="
-    line: 'tika_enable="YES"'
-  with_items:
-    - /etc/rc.conf
-  notify: Start Tika
+  notify: 
+    - Start Tika
+    - Restart Tika
