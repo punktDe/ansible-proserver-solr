@@ -32,6 +32,7 @@
     - Restart Tika
 
 - name: Stop and disable the native rc.d Tika service
+  failed_when: no
   ansible.builtin.service:
     name: tika
     state: stopped
