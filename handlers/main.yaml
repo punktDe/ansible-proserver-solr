@@ -12,13 +12,19 @@
   when: not (solr_service_result is defined and solr_service_result.changed)
 
 - name: Start Tika
-  ansible.builtin.service:
-    name: tika
-    state: started
+  changed_when: yes
+  ansible.builtin.shell:
+    cmd: |
+      set -e -u -o pipefail
+      supervisorctl update tika
+      supervisorctl start tika
   register: tika_service_result
 
 - name: Restart Tika
-  ansible.builtin.service:
-    name: tika
-    state: restarted
+  changed_when: yes
+  ansible.builtin.shell:
+    cmd: |
+      set -e -u -o pipefail
+      supervisorctl update tika
+      supervisorctl restart tika
   when: not (tika_service_result is defined and tika_service_result.changed)

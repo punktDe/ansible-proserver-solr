@@ -53,6 +53,7 @@
 
     - name: Kill all solr processes
       changed_when: yes
+      failed_when: no
       ansible.builtin.command:
         cmd: "killall -u solr"
 
@@ -95,10 +96,7 @@
   notify: Restart Solr
 
 - name: Enable Solr service
-  ansible.builtin.lineinfile:
-    path: "{{ item }}"
-    regexp: "^solr_enable="
-    line: 'solr_enable="YES"'
-  with_items:
-    - /etc/rc.conf
+  ansible.builtin.service:
+    name: solr
+    enabled: yes
   notify: Start Solr
