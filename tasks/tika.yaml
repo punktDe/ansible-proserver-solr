@@ -31,21 +31,14 @@
     - Start Tika
     - Restart Tika
 
-- name: Stop the native rc.d Tika service
+- name: Stop and disable the native rc.d Tika service
   ansible.builtin.service:
     name: tika
     state: stopped
+    enabled: no
   notify: 
     - Start Tika
     - Restart Tika
-
-- name: Disable the native rc.d Tika service
-  ansible.builtin.lineinfile:
-    path: "{{ item }}"
-    regexp: "^tika_enable="
-    line: 'tika_enable="NO"'
-  with_items:
-    - /etc/rc.conf
 
 - name: Install Tika service
   ansible.builtin.template:

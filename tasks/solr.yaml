@@ -96,10 +96,7 @@
   notify: Restart Solr
 
 - name: Enable Solr service
-  ansible.builtin.lineinfile:
-    path: "{{ item }}"
-    regexp: "^solr_enable="
-    line: 'solr_enable="YES"'
-  with_items:
-    - /etc/rc.conf
+  ansible.builtin.service:
+    name: solr
+    enabled: yes
   notify: Start Solr
