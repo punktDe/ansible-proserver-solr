@@ -22,22 +22,6 @@
     checksum_version: "{{ 'sha512' if solr.version[0] is ansible.builtin.version('9', '>=') else 'sha1' }}"
   register: solr_get_url_result
 
-- name: Ignore unrecognized JVM options (for versions older than 9)
-  notify: Restart Solr
-  when: solr.version[0] is ansible.builtin.version('9', '<')
-  ansible.builtin.template:
-    dest: "/etc/rc.d/solr"
-    src: "rc.d/solr"
-    owner: root
-    mode: "0755"
-
-- name: Don't ignore unrecognized JVM options (for versions newer than 9)
-  notify: Restart Solr
-  when: solr.version[0] is ansible.builtin.version('9', '>=')
-  ansible.builtin.file:
-    path: "/etc/rc.d/solr"
-    state: absent
-
 - name: Check if {{ solr.prefix.bin }}/bin exists
   register: solr_bin_exists
   ansible.builtin.stat:
