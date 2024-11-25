@@ -19,7 +19,7 @@
     mode: "0644"
   vars:
     solr_path_segment: "{{ 'solr' if solr.version[0] is ansible.builtin.version('9', '>=') else 'lucene' }}"
-    checksum_version: "{{ 'sha512' if solr.version[0] is ansible.builtin.version('9', '>=') else 'sha1' }}"
+    checksum_version: "sha512"
   register: solr_get_url_result
 
 - name: Check if {{ solr.prefix.bin }}/bin exists
