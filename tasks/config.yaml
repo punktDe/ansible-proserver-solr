@@ -1,0 +1,27 @@
+---
+- name: Comment out unsupported options (Solr 8.x)
+  notify: Restart Solr
+  when: solr.version is ansible.builtin.version('9', '<')
+  loop:
+    - allowUrls
+    - modules
+    - zkCredentialsInjector
+    - distributedClusterStateUpdates
+    - distributedCollectionConfigSetExecution
+    - minStateByteLenForCompression
+    - stateCompressor
+    - hideStackTrace
+  ansible.builtin.lineinfile:
+    path: /var/db/solr/solr.xml
+    regexp: '^(?!<\!\-\-)(.*{{ item }}.*)$'
+    line: <!-- deactivated by Ansible \g<1> -->
+    state: present
+    backrefs: yes
+
+- name: Restore unsupported options (Solr 9.x)
+  notify: Restart Solr
+  when: solr.version is ansible.builtin.version('9', '>=')
+  ansible.builtin.replace:
+    path: /var/db/solr/solr.xml
+    regexp: "^<!-- deactivated by Ansible (.*)-->.*$"
+    replace: \g<1>

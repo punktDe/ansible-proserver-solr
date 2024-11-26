@@ -1,14 +1,18 @@
 ---
 - name: Start Solr
-  ansible.builtin.service:
-    name: solr
-    state: started
+  ansible.builtin.shell:
+    cmd: |
+      set -e -u -o pipefail
+      supervisorctl update solr
+      supervisorctl start solr
   register: solr_service_result
 
 - name: Restart Solr
-  ansible.builtin.service:
-    name: solr
-    state: restarted
+  ansible.builtin.shell:
+    cmd: |
+      set -e -u -o pipefail
+      supervisorctl update solr
+      supervisorctl restart solr
   when: not (solr_service_result is defined and solr_service_result.changed)
 
 - name: Start Tika

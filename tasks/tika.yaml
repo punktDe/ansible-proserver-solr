@@ -4,7 +4,6 @@
     path: "{{ item }}"
     state: directory
     owner: root
-    group: "{{ root_group }}"
     mode: "0755"
   with_items:
     - "{{ solr.tika.prefix.bin }}"
@@ -23,7 +22,6 @@
     dest: "{{ solr.tika.prefix.bin }}/tika-server.jar"
     checksum: "sha512:https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-{{ tika_standard }}{{ solr.tika.version }}.jar.sha512"
     owner: root
-    group: "{{ root_group }}"
     mode: "0755"
   vars:
     tika_standard: "{{ 'standard-' if solr.tika.version is version('2', '>=') else '' }}"
@@ -51,3 +49,10 @@
   notify: 
     - Start Tika
     - Restart Tika
+
+- name: Reload supervisord configuration
+  changed_when: no
+  ansible.builtin.shell:
+    cmd: |
+      set -e -u -o pipefail
+      sudo supervisorctl update
