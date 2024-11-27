@@ -1,10 +1,24 @@
 ---
+galaxy_info:
+  author: "Punkt.de"
+  license: ""
+  description: "Ansible role for Solr"
+  role_name: "proserver_solr"
+  namespace: "punktde"
+  min_ansible_version: "2.15"
+
 dependencies:
   - role: dehydrated
   - role: nginx
-    when: inventory_hostname in groups.nginx or not inventory_hostname in groups.apache
+    when:
+      - groups.nginx is defined
+      - (inventory_hostname in groups.nginx or not inventory_hostname in groups.apache)
   - role: apache
-    when: inventory_hostname in groups.apache
+    when:
+      - groups.apache is defined
+      - inventory_hostname in groups.apache
   - role: oauth2_proxy
-    when: solr.oauth2_proxy is defined and solr.oauth2_proxy
+    when:
+      - solr.oauth2_proxy is defined
+      - solr.oauth2_proxy
   - role: supervisord

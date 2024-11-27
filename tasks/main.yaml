@@ -2,6 +2,9 @@
 - name: Install Apache Solr
   ansible.builtin.include_tasks: solr.yaml
 
+- name: Configure Apache Solr
+  ansible.builtin.include_tasks: config.yaml
+
 - name: Install Apache Tika
   ansible.builtin.include_tasks: tika.yaml
 

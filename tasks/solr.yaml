@@ -1,13 +1,22 @@
 ---
-- name: Create program directory for Solr 
+- name: Create program directories for Solr
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: solr
     group: solr
     mode: "0755"
-  with_items:
+    recurse: yes
+  loop:
     - "{{ solr.prefix.bin }}"
+    - "{{ solr.prefix.home }}"
+
+- name: Create log directory for Solr
+  ansible.builtin.file:
+    path: "{{ solr.prefix.logs }}"
+    state: directory
+    owner: solr
+    mode: "0755"
 
 - name: Download Solr {{ solr.version }}
   ansible.builtin.get_url:
@@ -19,37 +28,30 @@
     mode: "0644"
   vars:
     solr_path_segment: "{{ 'solr' if solr.version[0] is ansible.builtin.version('9', '>=') else 'lucene' }}"
-    checksum_version: "{{ 'sha512' if solr.version[0] is ansible.builtin.version('9', '>=') else 'sha1' }}"
+    checksum_version: "sha512"
   register: solr_get_url_result
-
-- name: Ignore unrecognized JVM options (for versions older than 9)
-  notify: Restart Solr
-  when: solr.version[0] is ansible.builtin.version('9', '<')
-  ansible.builtin.template:
-    dest: "/etc/rc.d/solr"
-    src: "rc.d/solr"
-    owner: root
-    mode: "0755"
-
-- name: Don't ignore unrecognized JVM options (for versions newer than 9)
-  notify: Restart Solr
-  when: solr.version[0] is ansible.builtin.version('9', '>=')
-  ansible.builtin.file:
-    path: "/etc/rc.d/solr"
-    state: absent
 
 - name: Check if {{ solr.prefix.bin }}/bin exists
   register: solr_bin_exists
   ansible.builtin.stat:
     path: "{{ solr.prefix.bin }}/bin"
 
+- name: Check the current Solr version
+  changed_when: no
+  when: solr_bin_exists
+  register: solr_current_version
+  ansible.builtin.command:
+    cmd: "{{ solr.prefix.bin }}/bin/solr version"
+
 - name: Handle Solr update
-  when: solr_get_url_result.changed
+  when: not solr_bin_exists.stat.exists or solr.version not in solr_current_version.stdout
   block:
     - name: Stop Solr service
-      ansible.builtin.service:
-        name: solr
-        state: stopped
+      changed_when: yes
+      ansible.builtin.shell:
+        cmd: |
+          set -e -u -o pipefail
+          sudo supervisorctl stop solr || true
 
     - name: Kill all solr processes
       changed_when: yes
@@ -65,38 +67,44 @@
       with_items:
         - "{{ solr.prefix.bin }}"
 
-- name: Unarchive Solr
-  when: solr_get_url_result.changed or not solr_bin_exists.stat.exists
-  notify: Restart Solr
-  ignore_errors: "{{ ansible_check_mode }}"
-  ansible.builtin.unarchive:
-    src: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
-    owner: solr
-    group: solr
-    dest: "{{ item }}"
-    extra_opts:
-      - --strip-components=1
-    remote_src: yes
-  with_items:
-    - "{{ solr.prefix.bin }}"
+    - name: Unarchive Solr
+      notify: Restart Solr
+      ignore_errors: "{{ ansible_check_mode }}"
+      ansible.builtin.unarchive:
+        src: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
+        owner: solr
+        group: solr
+        dest: "{{ item }}"
+        extra_opts:
+          - --strip-components=1
+        remote_src: yes
+      with_items:
+        - "{{ solr.prefix.bin }}"
 
-
-- name: Sync Solr config
-  ansible.posix.synchronize:
-    src: "{{ solr.synced_config }}/"
-    dest: "{{ item }}"
-    rsync_opts:
-      - --chown=solr:solr
-      - --no-times
-      - --checksum
-    use_ssh_args: yes
-  with_items:
-    - "{{ solr.prefix.var }}"
-  when: solr.synced_config
-  notify: Restart Solr
-
-- name: Enable Solr service
+- name: Stop and disable the native rc.d Solr service
+  failed_when: no
   ansible.builtin.service:
     name: solr
-    enabled: yes
-  notify: Start Solr
+    state: stopped
+    enabled: no
+  notify:
+    - Start Solr
+    - Restart Solr
+
+- name: Install Solr service
+  ansible.builtin.template:
+    src: supervisord.d/solr.conf
+    dest: "/usr/local/etc/supervisord.d/solr.conf"
+    owner: root
+    group: wheel
+    mode: "0755"
+  notify:
+    - Start Solr
+    - Restart Solr
+
+- name: Reload supervisord configuration
+  changed_when: no
+  ansible.builtin.shell:
+    cmd: |
+      set -e -u -o pipefail
+      sudo supervisorctl update

@@ -4,7 +4,6 @@
     src: "{{ item }}"
     dest: "{{ render_path }}"
     owner: "root"
-    group: "{{ root_group }}"
     mode: "0644"
   loop_control:
     label: "{{ render_path }}"
