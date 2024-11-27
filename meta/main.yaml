@@ -1,4 +1,12 @@
 ---
+galaxy_info:
+  author: "Punkt.de"
+  license: ""
+  description: "Ansible role for Solr"
+  role_name: "proserver_solr"
+  namespace: "punktde"
+  min_ansible_version: "2.15"
+
 dependencies:
   - role: dehydrated
   - role: nginx
