@@ -1,14 +1,13 @@
 ---
 solr:
-  overwrite_home: no
-  domain:
+  url:
   prefix:
     bin: /var/opt/solr/solr
     home: /var/opt/solr/home
+    tika: /var/opt/solr/tika
     logs: /var/log/solr-ansible
   version: 9.7.0
   tika:
-    prefix:
-      bin: /var/opt/tika
     version: 3.0.0
   oauth2_proxy:
+  overwrite_home: no

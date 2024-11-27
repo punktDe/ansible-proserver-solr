@@ -1,5 +1,6 @@
 ---
 - name: Start Solr
+  changed_when: yes
   ansible.builtin.shell:
     cmd: |
       set -e -u -o pipefail
@@ -8,6 +9,7 @@
   register: solr_service_result
 
 - name: Restart Solr
+  changed_when: yes
   ansible.builtin.shell:
     cmd: |
       set -e -u -o pipefail

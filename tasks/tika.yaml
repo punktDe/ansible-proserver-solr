@@ -6,7 +6,7 @@
     owner: root
     mode: "0755"
   with_items:
-    - "{{ solr.tika.prefix.bin }}"
+    - "{{ solr.prefix.tika }}"
 
 - name: Create log directory for Tika
   ansible.builtin.file:
@@ -19,7 +19,7 @@
   register: tika_get_url_result
   ansible.builtin.get_url:
     url: "https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-{{ tika_standard }}{{ solr.tika.version }}.jar"
-    dest: "{{ solr.tika.prefix.bin }}/tika-server.jar"
+    dest: "{{ solr.prefix.tika }}/tika-server.jar"
     checksum: "sha512:https://archive.apache.org/dist/tika/{{ solr.tika.version }}/tika-server-{{ tika_standard }}{{ solr.tika.version }}.jar.sha512"
     owner: root
     mode: "0755"
