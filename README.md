@@ -54,12 +54,31 @@ solr:
 
 If enabled, will erase the Solr home directory (default: /var/opt/solr/home) on version change.
 
-Use with caution – this will also remove all your cores and custom configurations for them.
+**Use with caution** – this will also remove all your cores and custom configurations for them.
 
 ```yaml
 solr:
   overwrite_home: yes
 ```
+
+If disabled, it will still handle the `solr.xml` as followed:
+
+In case `solr.version` is **older than 9.x**, it will comment out the following parameters in your `solr.xml`:
+
+* allowUrls
+* modules
+* zkCredentialsInjector
+* distributedClusterStateUpdates
+* distributedCollectionConfigSetExecution
+* minStateByteLenForCompression
+* stateCompressor
+* hideStackTrace
+
+These configuration parameters are present in the default `solr.xml` file shipped with 9.x, but are incompatible with versions 8.x and older.
+
+The commented out lines are marked with the text `disabled by Ansible`.
+
+In case `solr.version` is 9.x or newer, the role will uncomment all config lines that contain the text `disabled by Ansible`.
 
 ### solr.prefix
 The directories for Solr and Tika
