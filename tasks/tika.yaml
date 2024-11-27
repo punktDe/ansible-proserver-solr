@@ -10,9 +10,9 @@
 
 - name: Create log directory for Tika
   ansible.builtin.file:
-    path: "/var/log/tika"
+    path: "{{ solr.prefix.logs }}"
     state: directory
-    owner: nobody
+    owner: solr
     mode: "0755"
 
 - name: Download Tika {{ solr.tika.version }}

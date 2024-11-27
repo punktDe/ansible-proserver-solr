@@ -2,15 +2,15 @@
 dependencies:
   - role: dehydrated
   - role: nginx
-    when: 
+    when:
       - groups.nginx is defined
       - (inventory_hostname in groups.nginx or not inventory_hostname in groups.apache)
   - role: apache
-    when: 
+    when:
       - groups.apache is defined
       - inventory_hostname in groups.apache
   - role: oauth2_proxy
-    when: 
+    when:
       - solr.oauth2_proxy is defined
       - solr.oauth2_proxy
   - role: supervisord

@@ -19,6 +19,8 @@ solr:
     prefix:
       bin: /var/opt/tika
     version: 2.8.0
-  synced_config: /path/to/synced/config
   oauth2_proxy: main # https://github.com/punktDe/ansible-proserver-oauth2-proxy
+  # Will erase the Solr home and replace it with the example 
+  # home folder shipped with the respective Solr version
+  overwrite_home: no 
 ```

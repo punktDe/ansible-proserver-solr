@@ -1,5 +1,5 @@
 ---
-- name: Create program directory for Solr 
+- name: Create program directories for Solr
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
@@ -13,9 +13,9 @@
 
 - name: Create log directory for Solr
   ansible.builtin.file:
-    path: "/var/log/solr"
+    path: "{{ solr.prefix.logs }}"
     state: directory
-    owner: nobody
+    owner: solr
     mode: "0755"
 
 - name: Download Solr {{ solr.version }}
@@ -36,10 +36,18 @@
   ansible.builtin.stat:
     path: "{{ solr.prefix.bin }}/bin"
 
+- name: Check the current Solr version
+  changed_when: no
+  when: solr_bin_exists
+  register: solr_current_version
+  ansible.builtin.shell:
+    cmd: "{{ solr.prefix.bin }}/bin/solr version"
+
 - name: Handle Solr update
-  when: solr_get_url_result.changed
+  when: not solr_bin_exists.stat.exists or solr.version not in solr_current_version.stdout
   block:
     - name: Stop Solr service
+      changed_when: yes
       ansible.builtin.shell:
         cmd: |
           set -e -u -o pipefail
@@ -59,20 +67,19 @@
       with_items:
         - "{{ solr.prefix.bin }}"
 
-- name: Unarchive Solr
-  when: solr_get_url_result.changed or not solr_bin_exists.stat.exists
-  notify: Restart Solr
-  ignore_errors: "{{ ansible_check_mode }}"
-  ansible.builtin.unarchive:
-    src: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
-    owner: solr
-    group: solr
-    dest: "{{ item }}"
-    extra_opts:
-      - --strip-components=1
-    remote_src: yes
-  with_items:
-    - "{{ solr.prefix.bin }}"
+    - name: Unarchive Solr
+      notify: Restart Solr
+      ignore_errors: "{{ ansible_check_mode }}"
+      ansible.builtin.unarchive:
+        src: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
+        owner: solr
+        group: solr
+        dest: "{{ item }}"
+        extra_opts:
+          - --strip-components=1
+        remote_src: yes
+      with_items:
+        - "{{ solr.prefix.bin }}"
 
 - name: Stop and disable the native rc.d Solr service
   failed_when: no
@@ -80,7 +87,7 @@
     name: solr
     state: stopped
     enabled: no
-  notify: 
+  notify:
     - Start Solr
     - Restart Solr
 
@@ -91,7 +98,7 @@
     owner: root
     group: wheel
     mode: "0755"
-  notify: 
+  notify:
     - Start Solr
     - Restart Solr
 

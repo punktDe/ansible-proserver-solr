@@ -1,4 +1,24 @@
 ---
+- name: Check if Solr home is already set up
+  register: solr_home
+  ansible.builtin.stat:
+    path: "{{ solr.prefix.home }}/solr.xml"
+
+- name: Install the example home files
+  when: not solr_home.stat.exists or solr.overwrite_home
+  ansible.posix.synchronize:
+    src: "{{ solr.prefix.bin }}/server/solr/"
+    dest: "{{ solr.prefix.home }}/"
+    delete: true
+    recursive: true
+    rsync_opts:
+      - --chown=solr:solr
+      - --no-times
+      - --checksum
+    use_ssh_args: yes
+  notify: Restart Solr
+  delegate_to: "{{ inventory_hostname }}"
+
 - name: Comment out unsupported options (Solr 8.x)
   notify: Restart Solr
   when: solr.version is ansible.builtin.version('9', '<')
@@ -12,7 +32,7 @@
     - stateCompressor
     - hideStackTrace
   ansible.builtin.lineinfile:
-    path: /var/db/solr/solr.xml
+    path: "{{ solr.prefix.home }}/solr.xml"
     regexp: '^(?!<\!\-\-)(.*{{ item }}.*)$'
     line: <!-- deactivated by Ansible \g<1> -->
     state: present
@@ -22,6 +42,6 @@
   notify: Restart Solr
   when: solr.version is ansible.builtin.version('9', '>=')
   ansible.builtin.replace:
-    path: /var/db/solr/solr.xml
+    path: "{{ solr.prefix.home }}/solr.xml"
     regexp: "^<!-- deactivated by Ansible (.*)-->.*$"
     replace: \g<1>
