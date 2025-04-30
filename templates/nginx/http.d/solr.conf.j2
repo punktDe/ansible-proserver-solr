@@ -1,14 +1,34 @@
+{% if dehydrated | cert_exists(solr.domain) %}
 server {
-    {% if dehydrated|cert_exists(solr.domain) -%}
-    listen 0.0.0.0:443 ssl http2;
-    listen [::]:443 ssl http2;
-    {% if ansible_local.proserver.routing.with_gate64 -%}
-    listen [::1]:57 ssl http2 proxy_protocol;
+  listen 0.0.0.0:80;
+  listen [::]:80;
+  {% if ansible_local.proserver | default(none) and ansible_local.proserver.routing.with_gate64 -%}
+  listen [::1]:87 proxy_protocol;
+  {%- endif %}
+
+  server_name {{ solr.domain }};
+
+  root /var/null;
+
+  location / {
+    return 301 https://$host$request_uri;
+  }
+
+  include {{ nginx.prefix.config }}/include/letsencrypt.conf;
+}
+{% endif %}
+server {
+    {% if dehydrated | cert_exists(solr.domain) -%}
+    listen 0.0.0.0:443 ssl;
+    listen [::]:443 ssl;
+    {% if ansible_local.proserver | default(none) and ansible_local.proserver.routing.with_gate64 -%}
+    listen [::1]:57 ssl proxy_protocol;
     {%- endif %}
+    http2 on;
     {% else %}
     listen 0.0.0.0:80;
     listen [::]:80;
-    {% if ansible_local.proserver.routing.with_gate64 -%}
+    {% if ansible_local.proserver | default(none) and ansible_local.proserver.routing.with_gate64 -%}
     listen [::1]:87 proxy_protocol;
     {%- endif %}
     {% endif %}
