@@ -38,7 +38,7 @@
 
 - name: Check the current Solr version
   changed_when: no
-  when: solr_bin_exists
+  when: solr_bin_exists.stat.exists
   register: solr_current_version
   ansible.builtin.command:
     cmd: "{{ solr.prefix.bin }}/bin/solr version"
