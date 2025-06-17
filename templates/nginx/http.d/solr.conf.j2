@@ -37,6 +37,8 @@ server {
 
     include {{ nginx.prefix.config }}/include/security_headers.conf;
 
+    client_max_body_size 100M;
+
     {% if solr.oauth2_proxy -%}
     location /proserver/iap {
         proxy_pass http://[::1]:{{ oauth2_proxy.config[solr.oauth2_proxy].http_address.split(":")[-1] }};
