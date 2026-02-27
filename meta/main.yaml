@@ -20,5 +20,4 @@ dependencies:
   - role: oauth2_proxy
     when:
       - solr.oauth2_proxy is defined
-      - solr.oauth2_proxy
   - role: supervisord
