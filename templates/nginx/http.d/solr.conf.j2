@@ -37,7 +37,7 @@ server {
 
     include {{ nginx.prefix.config }}/include/security_headers.conf;
 
-    client_max_body_size 100M;
+    client_max_body_size {{ solr.nginx.client_max_body_size }};
 
     {% if solr.oauth2_proxy -%}
     location /proserver/iap {
