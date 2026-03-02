@@ -11,4 +11,6 @@ solr:
     version: 3.0.0
   oauth2_proxy:
   overwrite_home: no
+  nginx:
+    client_max_body_size: 1M
 
