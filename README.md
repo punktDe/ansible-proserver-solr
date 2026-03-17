@@ -1,8 +1,8 @@
 # ansible-proserver-solr
 
-An Ansible role that sets up Apache Solr and Apache Tika on a Proserver
+An Ansible role that sets up Apache Solr on a Proserver
 
-Downloads the defined versions of Solr and Tika from [archive.apache.org](https://archive.apache.org) and enables their respective services.
+Downloads the defined Solr version from [archive.apache.org](https://archive.apache.org) and enables the service.
 
 ## Dependencies
 * [ansible-proserver-oauth2-proxy](https://github.com/punktDe/ansible-proserver-oauth2-proxy)
@@ -12,7 +12,7 @@ Downloads the defined versions of Solr and Tika from [archive.apache.org](https:
 
 ## Background
 
-This role deactivates the built-in FreeBSD rc.d services for Solr and Tika and does not interfere with their respective working directories (/var/solr, /var/solr/db, etc.).
+This role deactivates the built-in FreeBSD rc.d Solr service and does not interfere with its working directories (/var/solr, /var/solr/db, etc.).
 
 Instead, it uses [supervisord](https://github.com/punktDe/ansible-proserver-supervisord) for service management, and works with the following folders:
 
@@ -20,8 +20,7 @@ Instead, it uses [supervisord](https://github.com/punktDe/ansible-proserver-supe
 |---|---|
 |/var/opt/solr/solr|Solr working directory|
 |/var/opt/solr/home|Solr home|
-|/var/opt/solr/tika|Tika working directory|
-|/var/log/solr-ansible|Solr and Tika Logs|
+|/var/log/solr-ansible|Solr logs|
 
 ## Configuration
 
@@ -81,13 +80,12 @@ The commented out lines are marked with the text `disabled by Ansible`.
 In case `solr.version` is 9.x or newer, the role will uncomment all config lines that contain the text `disabled by Ansible`.
 
 ### solr.prefix
-The directories for Solr and Tika
+The directories for Solr
 ```yaml
 solr:
   prefix:
     bin: /var/opt/solr/solr
     home: /var/opt/solr/home
-    tika: /var/opt/solr/tika
     logs: /var/log/solr-ansible
 ```
 
@@ -96,12 +94,4 @@ Solr version to install. Make sure the version exists on either https://archive.
 ```yaml
 solr:
   version: 9.7.0
-```
-
-### solr.tika.version
-Tika version to install. Make sure the version exists on https://archive.apache.org/dist/tika
-```yaml
-solr:
-  tika:
-    version: 3.0.0
 ```
