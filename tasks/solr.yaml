@@ -20,7 +20,7 @@
 
 - name: Download Solr {{ solr.version }}
   ansible.builtin.get_url:
-    url: "https://archive.apache.org/dist/{{ solr_path_segment }}/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz"
+    url: "https://downloads.apache.org/{{ solr_path_segment }}/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz"
     dest: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
     checksum: "{{ checksum_version }}:https://archive.apache.org/dist/{{ solr_path_segment }}/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz.{{ checksum_version }}"
     owner: solr
