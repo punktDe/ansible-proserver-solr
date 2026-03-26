@@ -10,3 +10,4 @@ solr:
   overwrite_home: no
   nginx:
     client_max_body_size: 1M
+  heap:
