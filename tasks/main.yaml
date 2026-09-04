@@ -5,9 +5,6 @@
 - name: Configure Apache Solr
   ansible.builtin.include_tasks: config.yaml
 
-- name: Install Apache Tika
-  ansible.builtin.include_tasks: tika.yaml
-
 - name: Install Nginx template
   ansible.builtin.include_tasks: nginx.yaml
   when: inventory_hostname in groups.nginx or not inventory_hostname in groups.apache
