@@ -5,9 +5,10 @@ solr:
     bin: /var/opt/solr/solr
     home: /var/opt/solr/home
     logs: /var/log/solr-ansible
-  version: 9.7.0
+  version: 10.0.0
   oauth2_proxy:
   overwrite_home: no
+  cloud: no
   nginx:
     client_max_body_size: 1M
   heap:

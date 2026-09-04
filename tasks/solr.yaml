@@ -20,14 +20,13 @@
 
 - name: Download Solr {{ solr.version }}
   ansible.builtin.get_url:
-    url: "https://downloads.apache.org/{{ solr_path_segment }}/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz"
+    url: "https://downloads.apache.org/solr/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz"
     dest: "{{ solr.prefix.bin }}/solr-{{ solr.version }}.tar.gz"
-    checksum: "{{ checksum_version }}:https://archive.apache.org/dist/{{ solr_path_segment }}/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz.{{ checksum_version }}"
+    checksum: "{{ checksum_version }}:https://archive.apache.org/dist/solr/solr/{{ solr.version }}/solr-{{ solr.version }}.tgz.{{ checksum_version }}"
     owner: solr
     group: solr
     mode: "0644"
   vars:
-    solr_path_segment: "{{ 'solr' if solr.version[0] is ansible.builtin.version('9', '>=') else 'lucene' }}"
     checksum_version: "sha512"
   register: solr_get_url_result
 
