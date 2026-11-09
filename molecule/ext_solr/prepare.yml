@@ -1,0 +1,41 @@
+---
+- name: Prepare
+  hosts: all
+  vars_files:
+    - ../../defaults/main.yaml
+  tasks:
+    - name: Install rsync
+      ansible.builtin.apt:
+        name: rsync
+        update_cache: yes
+
+    - name: Create the solr user
+      ansible.builtin.user:
+        name: solr
+
+    - name: Create a stock Solr home
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: solr
+        group: solr
+        mode: "0755"
+      loop:
+        - "{{ solr.prefix.home }}"
+        - "{{ solr.prefix.home }}/configsets/ext_solr_14_0_0/conf"
+
+    - name: Install a stock solr.xml
+      ansible.builtin.copy:
+        dest: "{{ solr.prefix.home }}/solr.xml"
+        content: "<solr/>\n"
+        owner: solr
+        group: solr
+        mode: "0644"
+
+    - name: Add synonyms an editor maintained in the TYPO3 backend
+      ansible.builtin.copy:
+        dest: "{{ solr.prefix.home }}/configsets/ext_solr_14_0_0/conf/_schema_analysis_synonyms_core_de.json"
+        content: '{"edited": "in the backend"}'
+        owner: solr
+        group: solr
+        mode: "0644"

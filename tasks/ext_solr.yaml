@@ -1,0 +1,147 @@
+---
+- name: Check the EXT:solr configuration
+  ansible.builtin.assert:
+    that:
+      - solr.ext_solr.version | default('', true) | string | length > 0
+    fail_msg: solr.ext_solr.version must be set when solr.ext_solr.enabled is on
+    quiet: yes
+
+- name: Set the EXT:solr source path
+  ansible.builtin.set_fact:
+    solr_ext_solr_src: "{{ solr.prefix.ext_solr }}/ext-solr-{{ solr.ext_solr.version }}/Resources/Private/Solr"
+
+- name: Create the EXT:solr download directory
+  ansible.builtin.file:
+    path: "{{ solr.prefix.ext_solr }}"
+    state: directory
+    owner: solr
+    group: solr
+    mode: "0755"
+
+- name: Download EXT:solr {{ solr.ext_solr.version }}
+  ansible.builtin.get_url:
+    url: "https://github.com/TYPO3-Solr/ext-solr/archive/refs/tags/{{ solr.ext_solr.version }}.tar.gz"
+    dest: "{{ solr.prefix.ext_solr }}/ext-solr-{{ solr.ext_solr.version }}.tar.gz"
+    owner: solr
+    group: solr
+    mode: "0644"
+  # On a first run in check mode the download directory doesn't exist yet
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Unpack the Solr server files of EXT:solr {{ solr.ext_solr.version }}
+  ansible.builtin.unarchive:
+    src: "{{ solr.prefix.ext_solr }}/ext-solr-{{ solr.ext_solr.version }}.tar.gz"
+    dest: "{{ solr.prefix.ext_solr }}"
+    remote_src: yes
+    include:
+      - "ext-solr-{{ solr.ext_solr.version }}/Resources/Private/Solr"
+    creates: "{{ solr_ext_solr_src }}/solr.xml"
+    owner: solr
+    group: solr
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Find the EXT:solr configset
+  ansible.builtin.find:
+    paths: "{{ solr_ext_solr_src }}/configsets"
+    file_type: directory
+    patterns: "ext_solr_*"
+  register: solr_ext_solr_configsets
+
+- name: Check that EXT:solr ships exactly one configset
+  ansible.builtin.assert:
+    that:
+      - solr_ext_solr_configsets.files | length == 1
+    fail_msg: >-
+      Expected one ext_solr_* configset in {{ solr_ext_solr_src }}/configsets,
+      found {{ solr_ext_solr_configsets.files | map(attribute='path') | map('basename') | list }}
+    quiet: yes
+  when: not ansible_check_mode
+
+- name: Set the EXT:solr configset name
+  ansible.builtin.set_fact:
+    solr_ext_solr_configset: "{{ (solr_ext_solr_configsets.files | first).path | basename }}"
+  when: solr_ext_solr_configsets.files | length == 1
+
+- name: Install the EXT:solr solr.xml
+  ansible.builtin.copy:
+    src: "{{ solr_ext_solr_src }}/solr.xml"
+    dest: "{{ solr.prefix.home }}/solr.xml"
+    remote_src: yes
+    owner: solr
+    group: solr
+    mode: "0644"
+  notify: Restart Solr
+  ignore_errors: "{{ ansible_check_mode }}"
+
+# rsync instead of synchronize: it runs on the Solr host itself, and the
+# second pass must only add missing files. Solr stores the synonyms and
+# stopwords maintained in the TYPO3 backend as _schema_analysis_*.json inside
+# the configset, so those are never overwritten. Creating them changes the
+# directory mtimes, hence --omit-dir-times.
+- name: Install the EXT:solr plugin jars and configset
+  ansible.builtin.command:
+    argv: >-
+      {{ ['rsync', '--archive', '--omit-dir-times', '--checksum', '--itemize-changes', '--chown=solr:solr']
+         + (['--dry-run'] if ansible_check_mode else [])
+         + item.opts
+         + [solr_ext_solr_src ~ '/' ~ item.src ~ '/', solr.prefix.home ~ '/' ~ item.src ~ '/'] }}
+  check_mode: no
+  register: solr_ext_solr_rsync
+  changed_when: solr_ext_solr_rsync.stdout | length > 0
+  notify: Restart Solr
+  when: solr_ext_solr_configset is defined
+  loop:
+    - src: typo3lib
+      opts: ["--delete"]
+    - src: "configsets/{{ solr_ext_solr_configset | default('') }}"
+      opts: ["--exclude=_schema_analysis_*.json"]
+    - src: "configsets/{{ solr_ext_solr_configset | default('') }}"
+      opts: ["--ignore-existing", "--include=*/", "--include=_schema_analysis_*.json", "--exclude=*"]
+  loop_control:
+    label: "{{ item.src }} {{ item.opts | join(' ') }}"
+
+- name: Check that the core languages exist in the configset
+  ansible.builtin.stat:
+    path: "{{ solr_ext_solr_src }}/configsets/{{ solr_ext_solr_configset }}/conf/{{ item.value }}/schema.xml"
+  register: solr_ext_solr_schemas
+  loop: "{{ solr.ext_solr.cores | dict2items | rejectattr('value', 'none') }}"
+  loop_control:
+    label: "{{ item.key }}: {{ item.value }}"
+  when: solr_ext_solr_configset is defined
+
+- name: Fail on unknown core languages
+  ansible.builtin.fail:
+    msg: "Core {{ item.item.key }}: there is no schema for language '{{ item.item.value }}' in {{ solr_ext_solr_configset }}"
+  loop: "{{ solr_ext_solr_schemas.results | selectattr('stat', 'defined') | rejectattr('stat.exists') }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+
+- name: Create the core directories
+  ansible.builtin.file:
+    path: "{{ solr.prefix.home }}/cores/{{ item.key }}"
+    state: directory
+    owner: solr
+    group: solr
+    mode: "0755"
+  loop: "{{ solr.ext_solr.cores | dict2items | rejectattr('value', 'none') }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+# Solr discovers cores by their core.properties at startup, so a new or
+# changed core takes effect with the restart
+- name: Configure the cores
+  ansible.builtin.copy:
+    dest: "{{ solr.prefix.home }}/cores/{{ item.key }}/core.properties"
+    content: |
+      configSet={{ solr_ext_solr_configset }}
+      schema={{ item.value }}/schema.xml
+      name={{ item.key }}
+      dataDir=../../data/{{ item.key }}
+    owner: solr
+    group: solr
+    mode: "0644"
+  notify: Restart Solr
+  loop: "{{ solr.ext_solr.cores | dict2items | rejectattr('value', 'none') }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: solr_ext_solr_configset is defined

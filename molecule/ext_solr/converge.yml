@@ -1,0 +1,41 @@
+---
+- name: Converge
+  hosts: all
+  vars_files:
+    - ../../defaults/main.yaml
+    - vars/main.yml
+  tasks:
+    # Same as the first tasks of tasks/solr.yaml, which run before
+    # ext_solr.yaml on every role run and must not undo its files
+    - name: Create program directories for Solr
+      ansible.builtin.file:
+        path: "{{ solr.prefix.home }}"
+        state: directory
+        owner: solr
+        group: solr
+        mode: "0755"
+
+    - name: Hand the program directories to the solr user
+      ansible.builtin.file:
+        path: "{{ solr.prefix.home }}"
+        state: directory
+        owner: solr
+        group: solr
+        recurse: yes
+
+    - name: Deploy the EXT:solr server files and cores
+      ansible.builtin.include_tasks: ../../tasks/ext_solr.yaml
+  handlers:
+    # Stands in for the role's supervisord handler. Like Solr loading a new
+    # core, it also creates a managed resource file in the configset, which
+    # changes the conf/ directory's mtime.
+    - name: Restart Solr
+      ansible.builtin.copy:
+        dest: "{{ item }}"
+        content: "restarted\n"
+        owner: solr
+        group: solr
+        mode: "0644"
+      loop:
+        - /tmp/solr-restarted
+        - "{{ solr.prefix.home }}/configsets/ext_solr_14_0_0/conf/_schema_analysis_stopwords_site-de.json"

@@ -5,8 +5,9 @@
 - name: Configure Apache Solr
   ansible.builtin.include_tasks: config.yaml
 
-- name: Install Apache Tika
-  ansible.builtin.include_tasks: tika.yaml
+- name: Deploy the EXT:solr server files and cores
+  ansible.builtin.include_tasks: ext_solr.yaml
+  when: solr.ext_solr.enabled | bool
 
 - name: Install Nginx template
   ansible.builtin.include_tasks: nginx.yaml
