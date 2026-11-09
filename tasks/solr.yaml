@@ -6,6 +6,18 @@
     owner: solr
     group: solr
     mode: "0755"
+  loop:
+    - "{{ solr.prefix.bin }}"
+    - "{{ solr.prefix.home }}"
+
+# Ownership only: a recursive mode would also hit the index files and the
+# EXT:solr files on every run, which then get reset and restart Solr
+- name: Hand the program directories to the solr user
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: solr
+    group: solr
     recurse: yes
   loop:
     - "{{ solr.prefix.bin }}"
