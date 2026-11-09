@@ -25,6 +25,8 @@
     owner: solr
     group: solr
     mode: "0644"
+  # On a first run in check mode the download directory doesn't exist yet
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Unpack the Solr server files of EXT:solr {{ solr.ext_solr.version }}
   ansible.builtin.unarchive:
