@@ -1,0 +1,16 @@
+---
+- name: Converge
+  hosts: all
+  vars_files:
+    - ../../defaults/main.yaml
+    - vars/main.yml
+  tasks:
+    - name: Deploy the EXT:solr server files and cores
+      ansible.builtin.include_tasks: ../../tasks/ext_solr.yaml
+  handlers:
+    # Stands in for the role's supervisord handler
+    - name: Restart Solr
+      ansible.builtin.copy:
+        dest: /tmp/solr-restarted
+        content: "restarted\n"
+        mode: "0644"

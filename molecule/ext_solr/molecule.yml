@@ -1,0 +1,30 @@
+---
+# Tests tasks/ext_solr.yaml on its own: the rest of the role targets
+# FreeBSD proServers and its dependencies are not available here.
+driver:
+  name: docker
+platforms:
+  - name: ext-solr
+    image: geerlingguy/docker-ubuntu2404-ansible
+    command: /lib/systemd/systemd
+    pre_build_image: true
+    privileged: true
+    cgroupns_mode: host
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+provisioner:
+  name: ansible
+  env:
+    ANSIBLE_HASH_BEHAVIOUR: merge
+verifier:
+  name: ansible
+scenario:
+  name: ext_solr
+  test_sequence:
+    - destroy
+    - create
+    - prepare
+    - converge
+    - idempotence
+    - verify
+    - destroy

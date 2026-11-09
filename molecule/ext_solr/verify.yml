@@ -1,0 +1,49 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - ../../defaults/main.yaml
+  tasks:
+    - name: Read the deployed files
+      ansible.builtin.slurp:
+        src: "{{ item }}"
+      register: verify_files
+      loop:
+        - "{{ solr.prefix.home }}/solr.xml"
+        - "{{ solr.prefix.home }}/cores/site-de/core.properties"
+        - "{{ solr.prefix.home }}/cores/site-en/core.properties"
+        - "{{ solr.prefix.home }}/configsets/ext_solr_14_0_0/conf/_schema_analysis_synonyms_core_de.json"
+
+    - name: Find the deployed plugin jars and schemas
+      ansible.builtin.find:
+        paths:
+          - "{{ solr.prefix.home }}/typo3lib"
+          - "{{ solr.prefix.home }}/configsets/ext_solr_14_0_0/conf/german"
+          - "{{ solr.prefix.home }}/configsets/ext_solr_14_0_0/conf"
+        patterns: ["*.jar", "schema.xml", "_schema_analysis_stopwords_core_de.json"]
+      register: verify_found
+
+    - name: Check whether the restart handler ran and the removed core is absent
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      register: verify_stat
+      loop:
+        - /tmp/solr-restarted
+        - "{{ solr.prefix.home }}/cores/removed"
+
+    - name: Assert the EXT:solr deployment
+      ansible.builtin.assert:
+        that:
+          - "'sharedLib' in content[0]"
+          - content[1] == "configSet=ext_solr_14_0_0\nschema=german/schema.xml\nname=site-de\ndataDir=../../data/site-de\n"
+          - content[2] == "configSet=ext_solr_14_0_0\nschema=english/schema.xml\nname=site-en\ndataDir=../../data/site-en\n"
+          - "'in the backend' in content[3]"
+          - found | select('match', '.*/typo3lib/solr-typo3-plugin-.*\.jar$') | list | length == 1
+          - found | select('match', '.*/german/schema.xml$') | list | length == 1
+          - found | select('match', '.*/_schema_analysis_stopwords_core_de.json$') | list | length == 1
+          - verify_stat.results[0].stat.exists
+          - not verify_stat.results[1].stat.exists
+      vars:
+        content: "{{ verify_files.results | map(attribute='content') | map('b64decode') | list }}"
+        found: "{{ verify_found.files | map(attribute='path') | list }}"

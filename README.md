@@ -87,6 +87,7 @@ solr:
     bin: /var/opt/solr/solr
     home: /var/opt/solr/home
     logs: /var/log/solr-ansible
+    ext_solr: /var/opt/solr/ext-solr
 ```
 
 ### solr.version
@@ -94,4 +95,29 @@ Solr version to install. Make sure the version exists on either https://archive.
 ```yaml
 solr:
   version: 9.7.0
+```
+
+### solr.ext_solr
+**Default**: disabled
+
+Prepares Solr for the TYPO3 extension [EXT:solr](https://github.com/TYPO3-Solr/ext-solr) and creates its cores. Only for Solr servers used by TYPO3, so it is off unless `enabled` is set.
+
+`version` is the EXT:solr release whose Solr server files are deployed. Use the version the TYPO3 project has installed (`composer show apache-solr-for-typo3/solr`), so the configset matches the extension. The role downloads that release from GitHub and installs the following from its `Resources/Private/Solr` folder into the Solr home:
+
+* `solr.xml`, which loads the TYPO3 plugin jars from `typo3lib/`
+* `typo3lib/` with the plugin jars
+* the `ext_solr_*` configset
+
+`cores` maps each core name to the language of its schema, i.e. a folder in the configset's `conf/` (`german`, `english`, ...). Every core gets `cores/<name>/core.properties` and stores its index in `data/<name>`, both inside the Solr home. Solr loads new or changed cores when the role restarts it. Cores are never deleted; setting a core to `null` only stops the role from managing it.
+
+The synonyms and stopwords maintained in the TYPO3 backend are stored by Solr as `_schema_analysis_*.json` inside the configset. The role adds missing ones but never overwrites existing ones.
+
+```yaml
+solr:
+  ext_solr:
+    enabled: yes
+    version: 14.0.2
+    cores:
+      core_de: german
+      core_en: english
 ```

@@ -5,6 +5,10 @@
 - name: Configure Apache Solr
   ansible.builtin.include_tasks: config.yaml
 
+- name: Deploy the EXT:solr server files and cores
+  ansible.builtin.include_tasks: ext_solr.yaml
+  when: solr.ext_solr.enabled | bool
+
 - name: Install Nginx template
   ansible.builtin.include_tasks: nginx.yaml
   when: inventory_hostname in groups.nginx or not inventory_hostname in groups.apache

@@ -1,0 +1,11 @@
+---
+# Loaded after defaults/main.yaml and merged into it
+solr:
+  ext_solr:
+    enabled: yes
+    version: 14.0.2
+    cores:
+      site-de: german
+      site-en: english
+      # null entries are skipped
+      removed:

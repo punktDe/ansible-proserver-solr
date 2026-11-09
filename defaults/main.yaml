@@ -5,6 +5,7 @@ solr:
     bin: /var/opt/solr/solr
     home: /var/opt/solr/home
     logs: /var/log/solr-ansible
+    ext_solr: /var/opt/solr/ext-solr
   version: 10.0.0
   oauth2_proxy:
   overwrite_home: no
@@ -12,3 +13,9 @@ solr:
   nginx:
     client_max_body_size: 1M
   heap:
+  # Deploys the Solr server files of the TYPO3 extension EXT:solr
+  # (configset, solr.xml, plugin jars) and creates its cores
+  ext_solr:
+    enabled: no
+    version:
+    cores: {}
