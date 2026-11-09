@@ -76,11 +76,12 @@
 # rsync instead of synchronize: it runs on the Solr host itself, and the
 # second pass must only add missing files. Solr stores the synonyms and
 # stopwords maintained in the TYPO3 backend as _schema_analysis_*.json inside
-# the configset, so those are never overwritten.
+# the configset, so those are never overwritten. Creating them changes the
+# directory mtimes, hence --omit-dir-times.
 - name: Install the EXT:solr plugin jars and configset
   ansible.builtin.command:
     argv: >-
-      {{ ['rsync', '--archive', '--checksum', '--itemize-changes', '--chown=solr:solr']
+      {{ ['rsync', '--archive', '--omit-dir-times', '--checksum', '--itemize-changes', '--chown=solr:solr']
          + (['--dry-run'] if ansible_check_mode else [])
          + item.opts
          + [solr_ext_solr_src ~ '/' ~ item.src ~ '/', solr.prefix.home ~ '/' ~ item.src ~ '/'] }}

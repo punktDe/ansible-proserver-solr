@@ -26,9 +26,16 @@
     - name: Deploy the EXT:solr server files and cores
       ansible.builtin.include_tasks: ../../tasks/ext_solr.yaml
   handlers:
-    # Stands in for the role's supervisord handler
+    # Stands in for the role's supervisord handler. Like Solr loading a new
+    # core, it also creates a managed resource file in the configset, which
+    # changes the conf/ directory's mtime.
     - name: Restart Solr
       ansible.builtin.copy:
-        dest: /tmp/solr-restarted
+        dest: "{{ item }}"
         content: "restarted\n"
+        owner: solr
+        group: solr
         mode: "0644"
+      loop:
+        - /tmp/solr-restarted
+        - "{{ solr.prefix.home }}/configsets/ext_solr_14_0_0/conf/_schema_analysis_stopwords_site-de.json"
